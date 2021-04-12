@@ -10,7 +10,7 @@ Resources:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles:
-        - UdacityS3ReadOnlyEC2 #I picked the same role name as the exercise
+        - UdacityS3ReadOnlyEC2
   LBSecGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -56,19 +56,20 @@ Resources:
     Properties:
       UserData:
         Fn::Base64: !Sub |
-          #!/bin/bash
+         #!/bin/bash
           apt-get update -y
           apt-get install unzip awscli -y
           apt-get install apache2 -y
           systemctl start apache2.service
           cd /var/www/html
-          aws s3 cp s3://static-website-udacity-finnaoui/udacity-starter-website.zip
-          unzip -o udacity-starter-website.zip
+          aws s3 cp s3://udacity-demo-1/udacity.zip .
+          unzip -o udacity.zip
       ImageId: ami-0767046d1677be5a0 #The image ID is region locked
       KeyName: specifickey #choose your pairkey
       SecurityGroups:
         - Ref: WebServerSecGroup
       InstanceType: t3.small
+      IamInstanceProfile: !Ref ProfileWithRolesForOurApp
       BlockDeviceMappings:
         - DeviceName: "/dev/sdk"
           Ebs:
@@ -122,16 +123,13 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 8
       HealthyThresholdCount: 2
-      Port: 8080
+      Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 5  #Tries before the LB declare the server unhealthy in the IntervalDeclared above
       VpcId:
         Fn::ImportValue:
           Fn::Sub: "${EnvironmentName}-VPCID"
-
 Outputs:
     LoadBalancerDNSName:
         Description: A reference to the public URL of the LoadBalancer
-        Value: !GetAtt WebAppLB.DNSName
-        Export:
-            Name: !Join ["", ["http://", !GetAtt WebAppLB.DNSName]]
+        Value: !Join ["", ["http://", !GetAtt WebAppLB.DNSName]]
